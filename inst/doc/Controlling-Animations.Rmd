@@ -1,0 +1,92 @@
+---
+title: "Controlling Animations"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Controlling Animations}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Methods
+
+'Lottie' offers several methods for controlling various aspects of animations, and 'shinyLottie' provides options for calling these methods when initialising the animation or updating them at a later point. The table below documents the most common methods:
+
+| Method                 | `lottie_animation()` argument | 'shinyLottie' Function                                                      |
+|-----------------|-----------------|---------------------------------------|
+| Loop                   | `loop`                        | `lottie_setLoop()`                                                          |
+| Autoplay               | `autoplay`                    | `lottie_play()`, `lottie_pause()`, and `lottie_stop()`                      |
+| Speed                  | `speed`                       | `lottie_setSpeed()`                                                         |
+| Direction              | `direction`                   | `lottie_setDirection()`                                                     |
+| Play Segments          | `playSegments`                | `lottie_playSegments()`, `lottie_goToAndStop()`, and `lottie_goToAndPlay()` |
+| Set Subframe Rendering | `setSubFrame`                 | `lottie_setSubFrame()`                                                      |
+| Destroy                | N/A                           | `lottie_destroy()`                                                          |
+
+To demonstrate this, the example below initialises an animation using `lottie_animation()` with a `speed` value of 2, causing the animation to play twice as fast as normal. We can then use a reactive event, triggered by clicking the button, to update the speed to a value of 0.5 (causing it to play twice as slow as normal) using `lottie_setSpeed()`.
+
+```{r eval = FALSE}
+library(shiny)
+library(shinyLottie)
+
+ui <- fluidPage(
+  include_lottie(),
+  lottie_animation(
+    path = "shinyLottie/example.json",
+    name = "my_animation",
+    speed = 2
+  ),
+  actionButton("updateSpeed", "Set Speed to 0.5")
+)
+
+server <- function(input, output, session) {
+  observeEvent(input$updateSpeed, {
+    lottie_setSpeed(speed = 0.5, name = "my_animation")
+  })
+}
+
+shinyApp(ui, server)
+```
+
+Note that when calling `lottie_setSpeed()`, we reference the name of the animation we wish to target (in this case, `"my_animation"`). This is consistent across virtually all 'shinyLottie' functions, allowing for fine control over the animations in your 'shiny' app (i.e. being able to update the speed of a single animation, rather than all animations). Alternatively, the default default `name` value of `"all"` can be used to target all animations in the app.
+
+Finally, if you want to call a 'Lottie' method for which 'shinyLottie' does not provide a function for, this can be achieved using `lottie_callMethod()`.
+
+## Properties
+
+'Lottie' animations have a number of properties that can be queried during runtime. The example below demonstrates how to query the 'playCount' property of an animation using `lottie_getProperty()`.
+
+```{r eval = FALSE}
+library(shiny)
+library(shinyLottie)
+
+ui <- fluidPage(
+  include_lottie(),
+  lottie_animation(
+    path = "shinyLottie/example.json",
+    name = "my_animation"
+  ),
+  actionButton("getProperty", "Update Play Count"),
+  textOutput("playCountOutput")
+)
+
+server <- function(input, output, session) {
+  observeEvent(input$getProperty, {
+    lottie_getProperty(name = "my_animation", property = "playCount")
+  })
+
+  observe({
+    req(input$playCount)
+    output$playCountOutput <- renderText({
+      paste("Play Count:", input$playCount)
+    })
+  })
+}
+
+ shinyApp(ui, server)
+```

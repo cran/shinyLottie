@@ -1,0 +1,121 @@
+---
+title: "Event Listeners"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Event Listeners}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Adding Event Listeners
+
+Event listeners provide a way of introducing interactivity into our 'Lottie' animations; for example, we could have an event trigger when we mouse over an animation or when an animation completes. However, choosing the right event requires an understanding of whether we should be targeting the animation container, or the animation itself.
+
+### Target the Container
+
+An animation's container will be either:
+
+-   A div element when produced using `lottie_animation()`
+
+-   A button element when passing our animation into `lottie_button()`
+
+In both cases, when adding an event listener, we should use **standard HTML DOM events**, such as those documented [here](https://www.w3schools.com/jsref/dom_obj_event.asp). The example below demonstrates a common use case where, through the use of two event listeners (one for a 'mouseenter' event and another for a 'mouseleave' event), we can cause an animation to only play when the user hovers their mouse over the button.
+
+```{r eval = FALSE}
+library(shiny)
+library(shinyLottie)
+
+ui <- fluidPage(
+  include_lottie(),
+  lottie_animation(
+    path = "shinyLottie/example.json",
+    name = "my_animation",
+    width = "200px",
+    height = "100px",
+    loop = TRUE,
+    autoplay = FALSE,
+  ) |> lottie_button(inputId = "lottieButton", label = "Lottie") |>
+    lottie_addEventListener("mouseenter", "container", state = "play") |>
+    lottie_addEventListener("mouseleave", "container", state = "pause")
+)
+
+server <- function(input, output, session) {}
+
+shinyApp(ui, server)
+```
+
+### Target the Animation
+
+There are some **events that are specific to 'Lottie'** **animations**, which are documented [here](https://github.com/airbnb/lottie-web?tab=readme-ov-file#events). These generally track the internal state of the animation (i.e. the animation has reached a certain frame or has completed). The example below demonstrates a simple use case for the 'onComplete' event where we execute an arbitrary 'JavaScript' snippet to print a message to the browser's console.
+
+```{r eval = FALSE}
+library(shiny)
+library(shinyLottie)
+
+ui <- fluidPage(
+  include_lottie(),
+  lottie_animation(
+    path = "shinyLottie/example.json",
+    name = "my_animation"
+  ) |> 
+  lottie_addEventListener(
+    event = "loopComplete", 
+    target = "animation",
+    custom_js = "console.log('Animation Complete!');"
+  )
+)
+
+server <- function(input, output, session) {}
+
+shinyApp(ui, server)
+```
+
+## Removing Event Listeners
+
+It's also possible to disable this interactivity by using `lottie_removeEventListener()` to remove an event listener. Similar to `lottie_addEventListener()`, we must supply the animation `name`, the event `type`, and the `target`.
+
+In the example below, we initialise a 'Lottie' animation with an event listener that will assign the current 'playCount' value to a 'shiny' input value (`input$playCount`). Through the use of an `observeEvent()`, a notification is displayed each time this input value is updated. This will continue until the user clicks the 'Remove Event Listener' button which triggers a call to `lottie_removeEventListener()`, causing the input value to no longer update, and therefore ceasing the notifications.
+
+```{r eval = FALSE}
+library(shiny)
+library(shinyLottie)
+
+ui <- fluidPage(
+  include_lottie(),
+  # Create an 'animation' event that updates the 'playCount' input value
+  # value after each loop
+  lottie_animation(
+    path = "shinyLottie/example.json",
+    name = "my_animation"
+  ) |> 
+  lottie_addEventListener(
+    event = "loopComplete", 
+    target = "animation",
+    custom_js = "Shiny.setInputValue('playCount',
+      lottieInstances.my_animation.playCount, {priority: 'event'});"
+  ),
+  actionButton("removeEventListener", "Remove Event Listener")
+)
+
+server <- function(input, output, session) {
+  # Notifications demonstrate that eventListener is active
+  observeEvent(input$playCount, {
+    showNotification(paste("Animation played", input$playCount, "times"), duration = 1)
+  })
+
+  # Removing the event listener ceases the notifications
+  observeEvent(input$removeEventListener, {
+    lottie_removeEventListener(name = "my_animation", event = "loopComplete",
+                               target = "animation")
+  })
+}
+
+shinyApp(ui, server)
+```

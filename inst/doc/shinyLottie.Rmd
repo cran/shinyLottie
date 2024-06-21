@@ -1,0 +1,89 @@
+---
+title: "shinyLottie"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{shinyLottie}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+'shinyLottie' is an R package that allows users to easily integrate and control ['Lottie' animations](https://airbnb.io/lottie/#/) within ['shiny' applications](https://shiny.posit.co/), without the need for idiosyncratic expression or use of 'JavaScript'.
+
+This document introduces the most basic implementation of this package using the following functions:
+
+-   `include_lottie()` is required in order for 'shinyLottie' functions to work
+
+-   `lottie_animation()` generates a 'Lottie' animation object that can be inserted into a 'shiny' app's UI
+
+-   `lottie_button()` converts a 'Lottie' animation object into a button; this is behaviourally identical to `actionButton()`
+
+## Animations
+
+The following example demonstrates how to produce a simple 'shiny' app that includes a 'Lottie' animation.
+
+```{r eval = FALSE}
+library(shiny)
+library(shinyLottie)
+
+ui <- fluidPage(
+  include_lottie(),
+  lottie_animation(
+    path = "shinyLottie/example.json",
+    name = "my_animation"
+  )
+)
+
+server <- function(input, output, session) {}
+
+shinyApp(ui, server)
+```
+
+This relies on the use of two functions within the UI:
+
+1.  `include_lottie()` loads the necessary 'JavaScript' to enable 'Lottie' functionality
+
+2.  `lottie_animation()` generates a 'Lottie' animation sourced from the supplied `path` argument
+
+There are two types of `path` that can be used to reference a 'Lottie' animation:
+
+1.  A local file path to a JSON file - the `path` used in the above app references an example animation that is installed alongside 'shinyLottie'
+
+2.  A URL for web-hosted JSON files (i.e. [LottieFiles](https://app.lottiefiles.com/) asset link or [LottieLab](https://www.lottielab.com/?home) JSON URL)
+
+`lottie_animation()` also requires that we provide a `name`, which we can then reference when updating the animation during 'shiny' runtime. This process, along with further arguments that can be supplied to fine-tune playback behaviour, are explained in `vignette("Controlling-Animations")`.
+
+## Buttons
+
+`lottie_button()` makes it simple to convert 'Lottie' animations into functional buttons. The simplest way to do this is to pipe in the output of `lottie_animation()` (this can be done with either R's native `|>` or [magrittr's](https://magrittr.tidyverse.org/) `%>%`).
+
+```{r, eval = FALSE}
+library(shiny)
+library(shinyLottie)
+
+ui <- fluidPage(
+  include_lottie(),
+  lottie_animation(
+    path = "shinyLottie/example.json",
+    name = "my_animation",
+    height = "100px",
+    width = "100px"
+  ) |> lottie_button(inputId = "my_button")
+)
+
+server <- function(input, output, session) {
+  observeEvent(input$my_button, {
+    print("Button pressed")
+  })
+}
+
+shinyApp(ui, server)
+```
+
+Along with the animation object, we must also provide `lottie_button()` with an `inputId`. This makes it functionally identical to `actionButton()` - we can then observe the 'shiny' input slot of the same name (in this case `input$my_button`) to trigger reactive behaviour. Here, a simple message is printed to the console.

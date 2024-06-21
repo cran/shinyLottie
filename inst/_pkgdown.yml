@@ -1,0 +1,13 @@
+template:
+  bootstrap: 5
+
+articles:
+  - title: "shinyLottie"
+    contents:
+      - shinyLottie
+  - title: "Controlling Animations"
+    contents:
+      - Controlling-Animations
+  - title: "Event Listeners"
+    contents:
+      - Event-Listeners
